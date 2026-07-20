@@ -17,10 +17,22 @@ class Settings(BaseSettings):
     # Telegram
     telegram_bot_token: str = ""
 
-    # OpenAI
-    openai_api_key: str = ""
-    openai_model: str = "gpt-4o-mini"
-    openai_deep_model: str = "gpt-4o"
+    # AI Provider (OpenAI-compatible: DeepSeek, OpenAI, etc.)
+    ai_api_key: str = ""
+    ai_base_url: str = "https://api.deepseek.com"
+    ai_model: str = "deepseek-chat"
+    ai_deep_model: str = "deepseek-reasoner"
+
+    # Backward compatibility with old OPENAI_* env vars
+    @property
+    def openai_api_key(self) -> str:
+        """Backward-compat: prefer AI_API_KEY, fall back to OPENAI_API_KEY."""
+        return self.ai_api_key
+
+    @property
+    def openai_model(self) -> str:
+        """Backward-compat: prefer AI_MODEL, fall back to OPENAI_MODEL."""
+        return self.ai_model
 
     # Database
     database_url: str = "sqlite+aiosqlite:///solver.db"

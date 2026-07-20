@@ -42,6 +42,7 @@ def build_application(settings, session_factory) -> Application:
     ai_service = OpenAIAnalysisService(
         api_key=settings.openai_api_key,
         model=settings.openai_model,
+        base_url=settings.ai_base_url,
     )
 
     async def service_factory(context: ContextTypes.DEFAULT_TYPE) -> ProblemService:

@@ -58,17 +58,26 @@ class OpenAIAnalysisService(AIAnalysisService):
 
 НЕ ИСПОЛЬЗУЙ эмодзи. Будь искренним и конкретным."""
 
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini") -> None:
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "deepseek-chat",
+        base_url: str = "https://api.deepseek.com",
+    ) -> None:
         self._api_key = api_key
         self._model = model
+        self._base_url = base_url
         self._client = None
 
     def _get_client(self):
-        """Lazy initialization of OpenAI client."""
+        """Lazy initialization of OpenAI-compatible client (OpenAI, DeepSeek, etc.)."""
         if self._client is None:
             from openai import AsyncOpenAI
 
-            self._client = AsyncOpenAI(api_key=self._api_key)
+            self._client = AsyncOpenAI(
+                api_key=self._api_key,
+                base_url=self._base_url,
+            )
         return self._client
 
     async def analyze(self, request: AIAnalysisRequestDTO) -> AIAnalysisResponseDTO:
