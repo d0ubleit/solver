@@ -115,7 +115,7 @@ class SqlAlchemyUserRepository(UserRepository):
             updated_at=user.updated_at,
         )
         self._session.add(model)
-        await self._session.flush()
+        await self._session.commit()
         return user
 
     async def get_by_id(self, user_id: UserId) -> User | None:
@@ -149,7 +149,7 @@ class SqlAlchemyUserRepository(UserRepository):
         model.proactive_level = user.proactive_level.value
         model.proactive_enabled = user.proactive_enabled
         model.updated_at = datetime.now(tz.utc)
-        await self._session.flush()
+        await self._session.commit()
         return user
 
 
@@ -186,7 +186,7 @@ class SqlAlchemyProblemRepository(ProblemRepository):
             model.steps.append(step_model)
 
         self._session.add(model)
-        await self._session.flush()
+        await self._session.commit()
         return problem
 
     async def get_by_id(self, problem_id: ProblemId) -> Problem | None:
@@ -268,7 +268,7 @@ class SqlAlchemyProblemRepository(ProblemRepository):
                 )
                 model.steps.append(step_model)
 
-        await self._session.flush()
+        await self._session.commit()
         return problem
 
     async def delete(self, problem_id: ProblemId) -> None:
@@ -279,7 +279,7 @@ class SqlAlchemyProblemRepository(ProblemRepository):
         if model is None:
             raise ProblemNotFoundError(problem_id=str(problem_id))
         await self._session.delete(model)
-        await self._session.flush()
+        await self._session.commit()
 
 
 class SqlAlchemyConversationContextRepository(ConversationContextRepository):
@@ -299,7 +299,7 @@ class SqlAlchemyConversationContextRepository(ConversationContextRepository):
             updated_at=context._updated_at,
         )
         self._session.add(model)
-        await self._session.flush()
+        await self._session.commit()
         return context
 
     async def get_by_problem_id(
@@ -330,5 +330,5 @@ class SqlAlchemyConversationContextRepository(ConversationContextRepository):
         model.summary = context.summary
         model.tokens_used = context.tokens_used
         model.updated_at = datetime.now(tz.utc)
-        await self._session.flush()
+        await self._session.commit()
         return context
