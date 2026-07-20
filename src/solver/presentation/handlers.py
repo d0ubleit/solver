@@ -128,13 +128,14 @@ class BotHandlers:
 
         try:
             # Create problem
+            service = await self._get_service(context)
             dto = CreateProblemDTO(title=title, description=description)
-            problem = await self._get_service(context).create_problem(
+            problem = await service.create_problem(
                 telegram_id=telegram_id, dto=dto
             )
 
             # Trigger AI analysis
-            problem = await self._get_service(context).analyze_problem(
+            problem = await service.analyze_problem(
                 telegram_id=telegram_id, problem_id=problem.id
             )
 
@@ -167,7 +168,8 @@ class BotHandlers:
         telegram_id = update.effective_user.id
 
         try:
-            problems = await self._get_service(context).list_active_problems(telegram_id)
+            service = await self._get_service(context)
+            problems = await service.list_active_problems(telegram_id)
 
             if not problems:
                 await update.message.reply_text(
@@ -204,7 +206,8 @@ class BotHandlers:
         telegram_id = update.effective_user.id
 
         try:
-            problems = await self._get_service(context).list_problems(telegram_id)
+            service = await self._get_service(context)
+            problems = await service.list_problems(telegram_id)
             if not problems:
                 await update.message.reply_text("У тебя нет проблем. Создай через /new")
                 return
@@ -244,7 +247,8 @@ class BotHandlers:
         telegram_id = update.effective_user.id
 
         try:
-            problems = await self._get_service(context).list_active_problems(telegram_id)
+            service = await self._get_service(context)
+            problems = await service.list_active_problems(telegram_id)
             if not problems:
                 await update.message.reply_text("У тебя нет активных проблем.")
                 return
@@ -277,7 +281,7 @@ class BotHandlers:
                 return
 
             step = problem.steps[s_idx]
-            updated = await self._get_service(context).update_step_status(
+            updated = await service.update_step_status(
                 telegram_id=telegram_id,
                 problem_id=problem.id,
                 step_id=step.id,

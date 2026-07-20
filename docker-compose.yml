@@ -1,0 +1,22 @@
+services:
+  solver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: solver-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///data/solver.db
+    volumes:
+      - solver-data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  solver-data:
+    driver: local

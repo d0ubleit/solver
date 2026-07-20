@@ -87,17 +87,35 @@ def main() -> None:
     engine = create_engine(settings.database_url)
     session_factory = create_session_factory(engine)
 
-    async def async_main():
+    async def _run():
+        # Init DB
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables created")
 
+        # Build app
         app = build_application(settings, session_factory)
-        logger.info("Bot is polling...")
-        await app.run_polling()
+
+        # Initialize and start
+        await app.initialize()
+        await app.start()
+        await app.updater.start_polling()
+        logger.info("Bot is polling... Press Ctrl+C to stop")
+
+        # Wait until stopped
+        stop_event = asyncio.Event()
+        try:
+            await stop_event.wait()
+        except asyncio.CancelledError:
+            pass
+        finally:
+            await app.updater.stop()
+            await app.stop()
+            await app.shutdown()
+            logger.info("Bot stopped")
 
     try:
-        asyncio.run(async_main())
+        asyncio.run(_run())
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
     except Exception as e:

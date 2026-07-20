@@ -235,7 +235,7 @@ class SqlAlchemyProblemRepository(ProblemRepository):
         model.updated_at = datetime.now(tz.utc)
 
         # Update steps: remove deleted, update existing, add new
-        existing_step_ids = {s.id for s in model.steps}
+        existing_step_ids = {StepId(UUID(s.id)) for s in model.steps}
         new_step_ids = {s.id for s in problem.steps}
 
         # Remove steps no longer in domain
