@@ -189,7 +189,7 @@ class BotHandlers:
                 progress = f"\\[{p.completed_steps}/{p.total_steps}\\]"
                 pct = int(p.progress_percentage)
                 lines.append(
-                    f"{status_emoji} *{i}\\.* {escape_markdown(p.title)}\n"
+                    f"{status_emoji} *{i}\\.* {escape_markdown(p.title, version=2)}\n"
                     f"   {progress} {pct}% \\| /view\\_{i}"
                 )
 
@@ -305,8 +305,9 @@ class BotHandlers:
     # Helpers
     # ------------------------------------------------------------------
     def _format_problem(self, problem) -> str:
-        """Format a problem response for display in Telegram."""
-        e = escape_markdown  # short alias
+        """Format a problem response for display in Telegram (MarkdownV2)."""
+        def e(text: str) -> str:
+            return escape_markdown(text, version=2)
 
         status_emoji = {
             "draft": "📝",
