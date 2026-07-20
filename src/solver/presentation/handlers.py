@@ -65,7 +65,7 @@ class BotHandlers:
             "/start — Начало работы\n"
             "/new — Создать новую проблему\n"
             "/list — Показать все проблемы\n"
-            "/view <номер> — Посмотреть проблему\n"
+            "/view <номер> — Посмотреть проблему (например /view 1)\n"
             "/done <номер> <шаг> — Отметить шаг выполненным\n"
             "/help — Это сообщение\n\n"
             "💡 Совет: Просто опиши проблему своими словами, "
@@ -279,7 +279,7 @@ class BotHandlers:
                 pct = int(p.progress_percentage)
                 lines.append(
                     f"{status_emoji} *{i}\\.* {escape_markdown(p.title, version=2)}\n"
-                    f"   {progress} {pct}% \\| /view\\_{i}"
+                    f"   {progress} {pct}% \\| /view {i}"
                 )
 
             await update.message.reply_text(
