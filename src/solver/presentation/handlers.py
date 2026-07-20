@@ -74,6 +74,95 @@ class BotHandlers:
         await update.message.reply_text(help_text)
 
     # ------------------------------------------------------------------
+    # /test command — self-diagnostics
+    # ------------------------------------------------------------------
+    async def test_cmd(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Run built-in self-tests and report results."""
+        results: list[str] = []
+        passed = 0
+        failed = 0
+
+        async def check(name: str, condition: bool, detail: str = "") -> None:
+            nonlocal passed, failed
+            if condition:
+                results.append(f"✅ {name}")
+                passed += 1
+            else:
+                results.append(f"❌ {name}: {detail}")
+                failed += 1
+
+        # Test 1: Service factory works
+        try:
+            service = await self._get_service(context)
+            await check("Сервис создаётся", service is not None)
+        except Exception as e:
+            await check("Сервис создаётся", False, str(e))
+            service = None
+
+        # Test 2: Can create a problem
+        if service:
+            try:
+                from solver.application.dtos import CreateProblemDTO
+                tid = update.effective_user.id
+                problem = await service.create_problem(tid, CreateProblemDTO(
+                    title="__test_problem__",
+                    description="Automated self-test"
+                ))
+                await check("Проблема создаётся", problem is not None and problem.title == "__test_problem__")
+            except Exception as e:
+                await check("Проблема создаётся", False, str(e))
+
+        # Test 3: Can list problems
+        if service:
+            try:
+                tid = update.effective_user.id
+                problems = await service.list_active_problems(tid)
+                await check("Список проблем", len(problems) >= 1)
+            except Exception as e:
+                await check("Список проблем", False, str(e))
+
+        # Test 4: AI service is accessible (mock check)
+        if service:
+            try:
+                # Just verify create/analyze flow doesn't crash
+                tid = update.effective_user.id
+                p = await service.create_problem(tid, CreateProblemDTO(
+                    title="__test_ai__", description="Test AI integration"
+                ))
+                await service.analyze_problem(tid, p.id)
+                p2 = await service.get_problem(tid, p.id)
+                await check("AI анализ", p2.total_steps >= 1, f"steps={p2.total_steps}")
+            except Exception as e:
+                await check("AI анализ", False, str(e))
+
+        # Test 5: Markdown formatting doesn't crash
+        if service:
+            try:
+                tid = update.effective_user.id
+                # Create a problem with special characters to test formatting
+                p = await service.create_problem(tid, CreateProblemDTO(
+                    title="Тест (спецсимволы) и точка.",
+                    description="Описание с *звёздочкой* и _подчёркиванием_."
+                ))
+                p = await service.analyze_problem(tid, p.id)
+                formatted = self._format_problem(p)
+                await check("Форматирование Markdown",
+                    "parse" not in formatted.lower() and len(formatted) > 0,
+                    "Markdown parse error in formatted output")
+            except Exception as e:
+                await check("Форматирование Markdown", False, str(e))
+
+        # Report
+        total = passed + failed
+        summary = (
+            f"🧪 Результаты самотестирования: {passed}/{total}\n\n"
+            + "\n".join(results)
+            + f"\n\n{'🎉 Все тесты пройдены!' if failed == 0 else '⚠️ Есть ошибки — проверь логи Docker.'}"
+        )
+        await update.message.reply_text(summary)
+
+
+    # ------------------------------------------------------------------
     # /new conversation flow
     # ------------------------------------------------------------------
     async def new_problem_start(

@@ -61,6 +61,7 @@ def build_application(settings, session_factory) -> Application:
 
     app.add_handler(CommandHandler("start", handlers.start))
     app.add_handler(CommandHandler("help", handlers.help_cmd))
+    app.add_handler(CommandHandler("test", handlers.test_cmd))
     app.add_handler(CommandHandler("list", handlers.list_problems))
     app.add_handler(CommandHandler("view", handlers.view_problem))
     app.add_handler(CommandHandler("done", handlers.done_step))
