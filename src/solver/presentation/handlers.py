@@ -11,6 +11,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from telegram.helpers import escape_markdown
 
 from solver.application.dtos import CreateProblemDTO, UpdateStepDTO
 from solver.application.services import ProblemService
@@ -42,7 +43,7 @@ class BotHandlers:
 
         welcome_text = (
             f"👋 Привет, {user.first_name}!\n\n"
-            "Я **Solver** — твой проактивный AI-помощник по решению проблем.\n\n"
+            "Я Solver — твой проактивный AI-помощник по решению проблем.\n\n"
             "Расскажи мне о проблеме, а я помогу:\n"
             "🔍 Проанализировать ситуацию\n"
             "📋 Разбить на конкретные шаги\n"
@@ -52,7 +53,7 @@ class BotHandlers:
             "/list — Мои проблемы\n"
             "/help — Помощь"
         )
-        await update.message.reply_text(welcome_text, parse_mode="Markdown")
+        await update.message.reply_text(welcome_text)
 
     # ------------------------------------------------------------------
     # /help command
@@ -60,17 +61,17 @@ class BotHandlers:
     async def help_cmd(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /help command."""
         help_text = (
-            "📚 **Команды Solver:**\n\n"
+            "📚 Команды Solver:\n\n"
             "/start — Начало работы\n"
             "/new — Создать новую проблему\n"
             "/list — Показать все проблемы\n"
             "/view <номер> — Посмотреть проблему\n"
             "/done <номер> <шаг> — Отметить шаг выполненным\n"
             "/help — Это сообщение\n\n"
-            "💡 **Совет:** Просто опиши проблему своими словами, "
+            "💡 Совет: Просто опиши проблему своими словами, "
             "и я помогу разобраться!"
         )
-        await update.message.reply_text(help_text, parse_mode="Markdown")
+        await update.message.reply_text(help_text)
 
     # ------------------------------------------------------------------
     # /new conversation flow
@@ -141,7 +142,7 @@ class BotHandlers:
 
             # Format response
             response = self._format_problem(problem)
-            await update.message.reply_text(response, parse_mode="Markdown")
+            await update.message.reply_text(response, parse_mode="MarkdownV2")
 
         except Exception as e:
             await update.message.reply_text(
@@ -177,7 +178,7 @@ class BotHandlers:
                 )
                 return
 
-            lines = ["📋 **Твои активные проблемы:**\n"]
+            lines = ["📋 *Твои активные проблемы:*\n"]
             for i, p in enumerate(problems, 1):
                 status_emoji = {
                     "draft": "📝",
@@ -185,13 +186,16 @@ class BotHandlers:
                     "active": "⚡",
                     "on_hold": "⏸️",
                 }.get(p.status, "📌")
-                progress = f"[{p.completed_steps}/{p.total_steps}]"
+                progress = f"\\[{p.completed_steps}/{p.total_steps}\\]"
+                pct = int(p.progress_percentage)
                 lines.append(
-                    f"{status_emoji} *{i}.* {p.title}\n"
-                    f"   {progress} {p.progress_percentage:.0f}% | /view_{i}"
+                    f"{status_emoji} *{i}\\.* {escape_markdown(p.title)}\n"
+                    f"   {progress} {pct}% \\| /view\\_{i}"
                 )
 
-            await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+            await update.message.reply_text(
+                "\n".join(lines), parse_mode="MarkdownV2"
+            )
 
         except Exception as e:
             await update.message.reply_text(f"❌ Ошибка: {str(e)}")
@@ -232,7 +236,7 @@ class BotHandlers:
 
             problem = problems[idx]
             response = self._format_problem(problem)
-            await update.message.reply_text(response, parse_mode="Markdown")
+            await update.message.reply_text(response, parse_mode="MarkdownV2")
 
         except Exception as e:
             await update.message.reply_text(f"❌ Ошибка: {str(e)}")
@@ -302,6 +306,8 @@ class BotHandlers:
     # ------------------------------------------------------------------
     def _format_problem(self, problem) -> str:
         """Format a problem response for display in Telegram."""
+        e = escape_markdown  # short alias
+
         status_emoji = {
             "draft": "📝",
             "analyzing": "🔍",
@@ -312,15 +318,15 @@ class BotHandlers:
         emoji = status_emoji.get(problem.status, "📌")
 
         lines = [
-            f"{emoji} *{problem.title}*",
-            f"Статус: _{problem.status}_ | Приоритет: _{problem.priority}_",
+            f"{emoji} *{e(problem.title)}*",
+            f"Статус: {e(problem.status)} \\| Приоритет: {e(problem.priority)}",
         ]
 
         if problem.description:
-            lines.append(f"\n📝 _{problem.description}_")
+            lines.append(f"\n📝 {e(problem.description)}")
 
         if problem.steps:
-            lines.append(f"\n📋 *Шаги* ({problem.completed_steps}/{problem.total_steps}):")
+            lines.append(f"\n📋 *Шаги* \\({problem.completed_steps}/{problem.total_steps}\\):")
             for i, step in enumerate(problem.steps, 1):
                 step_emoji = {
                     "pending": "⬜",
@@ -328,14 +334,15 @@ class BotHandlers:
                     "completed": "✅",
                     "skipped": "⏭️",
                 }.get(step.status, "⬜")
-                lines.append(f"  {step_emoji} *{i}.* {step.description}")
+                lines.append(f"  {step_emoji} *{i}\\.* {e(step.description)}")
                 if step.ai_suggestion:
-                    lines.append(f"     💡 _{step.ai_suggestion}_")
+                    lines.append(f"     💡 {e(step.ai_suggestion)}")
 
         if problem.status != "resolved":
+            pct = int(problem.progress_percentage)
             lines.append(
-                f"\n📊 Прогресс: {problem.progress_percentage:.0f}%\n"
-                f"Отметить шаг: /done (используй /list для номеров)"
+                f"\n📊 Прогресс: {pct}%\n"
+                "Отметить шаг: /done \\(используй /list для номеров\\)"
             )
 
         return "\n".join(lines)
