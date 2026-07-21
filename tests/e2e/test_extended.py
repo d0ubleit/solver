@@ -398,3 +398,146 @@ class TestViewWithRealisticData:
         await handlers.view_problem(u2, _FakeContext(b2, u2))
         for msg in b2.sent_messages:
             assert "Can't parse" not in msg["text"]
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Session tests — conversation mode after problem creation
+# ═══════════════════════════════════════════════════════════════════
+
+@pytest_asyncio.fixture
+async def session_ai_mock():
+    """Mock AI that supports both analyze() and continue_dialog()."""
+    ai = AsyncMock(spec=AIAnalysisService)
+    ai.analyze.return_value = AIAnalysisResponseDTO(
+        analysis="Тестовый анализ.",
+        steps=["Шаг 1: Начать", "Шаг 2: Закончить"],
+        tokens_used=50,
+    )
+    ai.continue_dialog.return_value = {
+        "reply": "Хороший вопрос! Я уточнил шаги.",
+        "updated_steps": None,
+    }
+    ai.check_in.return_value = "Как дела?"
+    return ai
+
+
+@pytest_asyncio.fixture
+async def session_service(db_session, session_ai_mock):
+    """ProblemService with continue_dialog support."""
+    return ProblemService(
+        problem_repo=SqlAlchemyProblemRepository(db_session),
+        user_repo=SqlAlchemyUserRepository(db_session),
+        context_repo=SqlAlchemyConversationContextRepository(db_session),
+        ai_service=session_ai_mock,
+    )
+
+
+@pytest_asyncio.fixture
+async def session_handlers(session_service: ProblemService):
+    async def _factory(_ctx):
+        return session_service
+    return BotHandlers(service_factory=_factory)
+
+
+class TestSessionMode:
+    """E2E: session-based conversation after problem creation."""
+
+    @pytest.mark.asyncio
+    async def test_new_problem_auto_enters_session(self, session_handlers):
+        """After /new, user is automatically in session mode."""
+        u1, bot = _make_update("/new", user_id=800)
+        ctx = _FakeContext(bot, u1)
+        await session_handlers.new_problem_start(u1, ctx)
+
+        u2, _ = _make_update("Проблема для сессии", user_id=800, bot=bot)
+        ctx._update = u2
+        await session_handlers.new_problem_title(u2, ctx)
+
+        u3, _ = _make_update("/skip", user_id=800, bot=bot)
+        ctx._update = u3
+        await session_handlers.new_problem_skip_description(u3, ctx)
+
+        # Should be in session now
+        assert 800 in session_handlers._active_sessions
+        # Last message should mention session
+        final = bot.sent_messages[-1]["text"]
+        assert "сессии" in final.lower() or "session" in final.lower()
+
+    @pytest.mark.asyncio
+    async def test_session_message_triggers_continue_dialog(self, session_handlers):
+        """In session, a non-command message calls continue_dialog."""
+        # Create problem first → auto-enters session
+        u1, bot = _make_update("/new", user_id=801)
+        ctx = _FakeContext(bot, u1)
+        await session_handlers.new_problem_start(u1, ctx)
+        u2, _ = _make_update("Тест сессии", user_id=801, bot=bot)
+        ctx._update = u2
+        await session_handlers.new_problem_title(u2, ctx)
+        u3, _ = _make_update("/skip", user_id=801, bot=bot)
+        ctx._update = u3
+        await session_handlers.new_problem_skip_description(u3, ctx)
+
+        # Now send a session message
+        u4, b4 = _make_update("А что насчёт второго шага?", user_id=801)
+        await session_handlers.handle_session_message(u4, _FakeContext(b4, u4))
+
+        # Should get AI reply
+        msgs = b4.sent_messages
+        assert len(msgs) >= 1
+        assert "Хороший вопрос" in msgs[-1]["text"] or "шаги" in msgs[-1]["text"].lower()
+
+    @pytest.mark.asyncio
+    async def test_leave_exits_session(self, session_handlers):
+        """After /new → /leave removes user from session."""
+        # Create → auto-enter session
+        u1, bot = _make_update("/new", user_id=802)
+        ctx = _FakeContext(bot, u1)
+        await session_handlers.new_problem_start(u1, ctx)
+        u2, _ = _make_update("Test", user_id=802, bot=bot)
+        ctx._update = u2
+        await session_handlers.new_problem_title(u2, ctx)
+        u3, _ = _make_update("/skip", user_id=802, bot=bot)
+        ctx._update = u3
+        await session_handlers.new_problem_skip_description(u3, ctx)
+
+        assert 802 in session_handlers._active_sessions
+
+        # /leave
+        u4, b4 = _make_update("/leave", user_id=802)
+        await session_handlers.leave_cmd(u4, _FakeContext(b4, u4))
+
+        assert 802 not in session_handlers._active_sessions
+
+    @pytest.mark.asyncio
+    async def test_no_session_message_without_session(self, session_handlers):
+        """Non-command message without active session → hint to use /new or /session."""
+        u, b = _make_update("Случайное сообщение", user_id=803)
+        await session_handlers.handle_session_message(u, _FakeContext(b, u))
+
+        text = b.sent_messages[0]["text"].lower()
+        assert "/new" in text or "/session" in text
+
+    @pytest.mark.asyncio
+    async def test_commands_work_during_session(self, session_handlers):
+        """/list and /help still work while in session."""
+        # Create → enters session
+        u1, bot = _make_update("/new", user_id=804)
+        ctx = _FakeContext(bot, u1)
+        await session_handlers.new_problem_start(u1, ctx)
+        u2, _ = _make_update("Test", user_id=804, bot=bot)
+        ctx._update = u2
+        await session_handlers.new_problem_title(u2, ctx)
+        u3, _ = _make_update("/skip", user_id=804, bot=bot)
+        ctx._update = u3
+        await session_handlers.new_problem_skip_description(u3, ctx)
+
+        assert 804 in session_handlers._active_sessions
+
+        # /list should still work
+        u4, b4 = _make_update("/list", user_id=804)
+        await session_handlers.list_problems(u4, _FakeContext(b4, u4))
+        assert len(b4.sent_messages) == 1
+        assert "Test" in b4.sent_messages[0]["text"]
+
+        # Still in session after /list
+        assert 804 in session_handlers._active_sessions

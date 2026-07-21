@@ -113,6 +113,7 @@ class ConversationContextModel(Base):
     messages = Column(JSON, default=list)
     summary = Column(Text, default="")
     tokens_used = Column(Integer, default=0)
+    last_activity_at = Column(DateTime, default=_utcnow)
     created_at = Column(DateTime, default=_utcnow)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 

@@ -6,7 +6,7 @@ from typing import Callable, Awaitable
 
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 from solver.config import get_settings
 from solver.application.ai_service import OpenAIAnalysisService
@@ -67,6 +67,9 @@ def build_application(settings, session_factory) -> Application:
     app.add_handler(CommandHandler("list", handlers.list_problems))
     app.add_handler(CommandHandler("view", handlers.view_problem))
     app.add_handler(CommandHandler("done", handlers.done_step))
+    app.add_handler(CommandHandler("session", handlers.session_cmd))
+    app.add_handler(CommandHandler("leave", handlers.leave_cmd))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_session_message))
     app.add_handler(handlers.build_new_problem_handler())
 
     logger.info("Bot handlers registered")

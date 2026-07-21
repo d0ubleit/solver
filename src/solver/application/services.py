@@ -236,3 +236,66 @@ class ProblemService:
         problem.resolve()
         await self._problem_repo.update(problem)
         return _problem_to_response(problem)
+
+    async def continue_session(
+        self, telegram_id: int, problem_id: UUID, user_message: str
+    ) -> dict:
+        """Continue a conversation session for an existing problem.
+
+        Returns:
+            {"reply": str, "updated_steps": list[str] | None}
+        """
+        user = await self._user_repo.get_by_telegram_id(telegram_id)
+        if user is None:
+            raise UserNotFoundError(user_id=str(telegram_id))
+
+        problem = await self._problem_repo.get_by_id(ProblemId(problem_id))
+        if problem is None or problem.user_id != user.id:
+            raise ProblemNotFoundError(problem_id=str(problem_id))
+
+        # Get or create conversation context
+        ctx = await self._context_repo.get_by_problem_id(problem.id)
+        if ctx is None:
+            from solver.domain.entities import ConversationContext
+            ctx = ConversationContext(problem_id=problem.id)
+            await self._context_repo.add(ctx)
+
+        # Build steps summary for AI context
+        steps_summary = "\n".join(
+            f"{s.step_order + 1}. [{s.status.value}] {s.description}"
+            for s in problem.steps
+        ) if problem.steps else "Шаги ещё не определены"
+
+        # Add user message to context
+        ctx.add_message(role="user", content=user_message)
+
+        # Call AI
+        try:
+            result = await self._ai_service.continue_dialog(
+                problem_title=problem.title,
+                problem_description=problem.description,
+                steps_summary=steps_summary,
+                conversation_history=ctx.messages[:-1],  # exclude the one we just added
+                user_message=user_message,
+            )
+        except Exception as e:
+            from solver.domain.exceptions import AIAnalysisError
+            raise AIAnalysisError(problem_id=str(problem.id), reason=str(e))
+
+        # Add AI reply to context
+        ctx.add_message(role="assistant", content=result.get("reply", ""))
+        await self._context_repo.update(ctx)
+
+        # Update steps if AI suggested changes
+        updated_steps = result.get("updated_steps")
+        if updated_steps and isinstance(updated_steps, list):
+            # Replace all steps with AI-suggested ones
+            problem._steps.clear()
+            for desc in updated_steps:
+                problem.add_step(description=str(desc))
+            await self._problem_repo.update(problem)
+
+        return {
+            "reply": result.get("reply", "Понял. Продолжаем работу."),
+            "updated_steps": updated_steps,
+        }

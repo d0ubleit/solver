@@ -94,6 +94,7 @@ def _context_to_entity(model: ConversationContextModel) -> ConversationContext:
         tokens_used=model.tokens_used or 0,
         created_at=model.created_at,
         updated_at=model.updated_at,
+        last_activity_at=model.last_activity_at,
     )
 
 
@@ -295,6 +296,7 @@ class SqlAlchemyConversationContextRepository(ConversationContextRepository):
             messages=context.messages,
             summary=context.summary,
             tokens_used=context.tokens_used,
+            last_activity_at=context.last_activity_at,
             created_at=context.created_at,
             updated_at=context._updated_at,
         )
@@ -329,6 +331,7 @@ class SqlAlchemyConversationContextRepository(ConversationContextRepository):
         model.messages = context.messages
         model.summary = context.summary
         model.tokens_used = context.tokens_used
+        model.last_activity_at = context.last_activity_at
         model.updated_at = datetime.now(tz.utc)
         await self._session.commit()
         return context

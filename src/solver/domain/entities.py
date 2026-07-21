@@ -347,6 +347,7 @@ class ConversationContext:
         "_tokens_used",
         "_created_at",
         "_updated_at",
+        "_last_activity_at",
     )
 
     def __init__(
@@ -358,6 +359,7 @@ class ConversationContext:
         tokens_used: int = 0,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
+        last_activity_at: datetime | None = None,
     ) -> None:
         self._id = id or UserId(uuid4())
         self._problem_id = problem_id
@@ -366,6 +368,7 @@ class ConversationContext:
         self._tokens_used = tokens_used
         self._created_at = created_at or datetime.now(tz.utc)
         self._updated_at = updated_at or datetime.now(tz.utc)
+        self._last_activity_at = last_activity_at or datetime.now(tz.utc)
 
     @property
     def problem_id(self) -> ProblemId:
@@ -387,13 +390,25 @@ class ConversationContext:
     def created_at(self) -> datetime:
         return self._created_at
 
+    @property
+    def last_activity_at(self) -> datetime:
+        return self._last_activity_at
+
     def add_message(self, role: str, content: str, tokens: int = 0) -> None:
         """Add a message to the conversation history."""
         self._messages.append({"role": role, "content": content})
         self._tokens_used += tokens
-        self._updated_at = datetime.now(tz.utc)
+        now = datetime.now(tz.utc)
+        self._updated_at = now
+        self._last_activity_at = now
 
     def summarize(self, summary: str) -> None:
         """Store a summary of the conversation."""
         self._summary = summary
-        self._updated_at = datetime.now(tz.utc)
+        now = datetime.now(tz.utc)
+        self._updated_at = now
+        self._last_activity_at = now
+
+    def touch_activity(self) -> None:
+        """Update the last activity timestamp (e.g. when user views the problem)."""
+        self._last_activity_at = datetime.now(tz.utc)

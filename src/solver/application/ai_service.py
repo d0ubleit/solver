@@ -10,7 +10,23 @@ class AIAnalysisService(ABC):
 
     @abstractmethod
     async def analyze(self, request: AIAnalysisRequestDTO) -> AIAnalysisResponseDTO:
-        """Analyze a problem and return recommended steps."""
+        """Analyze a problem and return recommended steps or clarifying questions."""
+        ...
+
+    @abstractmethod
+    async def continue_dialog(
+        self,
+        problem_title: str,
+        problem_description: str,
+        steps_summary: str,
+        conversation_history: list[dict[str, str]],
+        user_message: str,
+    ) -> dict:
+        """Continue a conversation about an existing problem.
+
+        Returns:
+            {"reply": str, "updated_steps": list[str] | None}
+        """
         ...
 
     @abstractmethod
@@ -145,3 +161,44 @@ class OpenAIAnalysisService(AIAnalysisService):
         )
 
         return response.choices[0].message.content or "Как продвигается работа над проблемой?"
+
+    async def continue_dialog(
+        self,
+        problem_title: str,
+        problem_description: str,
+        steps_summary: str,
+        conversation_history: list[dict[str, str]],
+        user_message: str,
+    ) -> dict:
+        """Continue a conversation about an existing problem. Returns reply and optional step updates."""
+        import json
+
+        client = self._get_client()
+
+        system_prompt = f"""Ты — AI-коуч. Пользователь работает над проблемой: "{problem_title}"
+Описание: {problem_description}
+Текущие шаги: {steps_summary}
+
+Твоя задача — ответить на сообщение пользователя в контексте этой проблемы.
+Если пользователь просит уточнить, скорректировать или добавить шаги — сделай это.
+ФОРМАТ ОТВЕТА (строго JSON):
+{{
+  "reply": "твой ответ пользователю (2-5 предложений)",
+  "updated_steps": ["Шаг 1 (обновлённый)", "Шаг 2", ...] или null если шаги не менялись
+}}"""
+
+        messages = [{"role": "system", "content": system_prompt}]
+        if conversation_history:
+            messages += conversation_history[-10:]  # Last 10 messages for context
+        messages.append({"role": "user", "content": user_message})
+
+        response = await client.chat.completions.create(
+            model=self._model,
+            messages=messages,
+            response_format={"type": "json_object"},
+            temperature=0.7,
+            max_tokens=800,
+        )
+
+        content = response.choices[0].message.content or "{}"
+        return json.loads(content)

@@ -27,6 +27,8 @@ class BotHandlers:
 
     def __init__(self, service_factory: ServiceFactory) -> None:
         self._factory = service_factory
+        # Track active sessions: {telegram_id: problem_id}
+        self._active_sessions: dict[int, UUID] = {}
 
     async def _get_service(self, context: ContextTypes.DEFAULT_TYPE) -> ProblemService:
         """Get a fresh ProblemService instance for the current request."""
@@ -335,8 +337,12 @@ class BotHandlers:
                 telegram_id=telegram_id, problem_id=problem.id
             )
 
+            # Auto-enter session mode for this problem
+            self._active_sessions[telegram_id] = problem.id
+
             # Format response
             response = self._format_problem(problem)
+            response += "\n\n💬 _Ты в сессии этой проблемы. Пиши — я помогу уточнить или скорректировать шаги._"
             await update.message.reply_text(response, parse_mode="MarkdownV2")
 
         except Exception as e:
@@ -492,6 +498,94 @@ class BotHandlers:
                 f"({updated.completed_steps}/{updated.total_steps})"
             )
             await update.message.reply_text(status_text)
+
+        except Exception as e:
+            await update.message.reply_text(f"❌ Ошибка: {str(e)}")
+
+    # ------------------------------------------------------------------
+    # /session command — enter a problem's conversation session
+    # ------------------------------------------------------------------
+    async def session_cmd(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Enter session mode for a problem. Usage: /session N or /session (last active)."""
+        tid = update.effective_user.id
+        service = await self._get_service(context)
+
+        parts = update.message.text.strip().split() if update.message else []
+        try:
+            if len(parts) >= 2:
+                idx = int(parts[1]) - 1
+                problems = await service.list_active_problems(tid)
+                if 0 <= idx < len(problems):
+                    pid = problems[idx].id
+                    self._active_sessions[tid] = pid
+                    await update.message.reply_text(
+                        f"💬 Ты в сессии проблемы «{problems[idx].title[:50]}»\n"
+                        "Пиши что угодно — я отвечу в контексте этой проблемы.\n"
+                        "/leave — выйти из сессии\n/list — список проблем"
+                    )
+                else:
+                    await update.message.reply_text("❌ Неверный номер проблемы. Используй /list.")
+            else:
+                # Enter session of last active problem
+                problems = await service.list_active_problems(tid)
+                if problems:
+                    pid = problems[0].id
+                    self._active_sessions[tid] = pid
+                    await update.message.reply_text(
+                        f"💬 Сессия: «{problems[0].title[:50]}»\nПиши — я слушаю. /leave чтобы выйти."
+                    )
+                else:
+                    await update.message.reply_text("Нет активных проблем. Создай через /new")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Ошибка: {str(e)}")
+
+    # ------------------------------------------------------------------
+    # /leave command — exit session mode
+    # ------------------------------------------------------------------
+    async def leave_cmd(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Exit the current problem session."""
+        tid = update.effective_user.id
+        if tid in self._active_sessions:
+            del self._active_sessions[tid]
+            await update.message.reply_text("👋 Ты вышел из сессии. /session чтобы вернуться.")
+        else:
+            await update.message.reply_text("Ты не в сессии. /session чтобы войти.")
+
+    # ------------------------------------------------------------------
+    # Handle non-command text in session mode
+    # ------------------------------------------------------------------
+    async def handle_session_message(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        """Route a non-command message: if in session → AI dialog, else → hint."""
+        tid = update.effective_user.id
+        text = update.message.text.strip() if update.message else ""
+
+        if not text:
+            return
+
+        # Check if user is in a session
+        pid = self._active_sessions.get(tid)
+        if pid is None:
+            # Not in session — suggest to create or enter one
+            await update.message.reply_text(
+                "Я не совсем понял. Используй /new чтобы создать проблему, "
+                "или /session чтобы продолжить обсуждение."
+            )
+            return
+
+        # User is in a session — continue dialog
+        await update.message.reply_text("💭 Думаю...")
+        service = await self._get_service(context)
+
+        try:
+            result = await service.continue_session(tid, pid, text)
+            reply = result.get("reply", "Понял, продолжаем.")
+
+            if result.get("updated_steps"):
+                reply += "\n\n📋 Я обновил шаги. Посмотри через /view."
+
+            await update.message.reply_text(reply)
 
         except Exception as e:
             await update.message.reply_text(f"❌ Ошибка: {str(e)}")
