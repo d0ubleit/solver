@@ -18,6 +18,7 @@ from solver.infrastructure.repositories import (
     SqlAlchemyConversationContextRepository,
 )
 from solver.presentation.handlers import BotHandlers
+from solver.infrastructure.scheduler import ProactiveScheduler
 
 
 ServiceFactory = Callable[[ContextTypes.DEFAULT_TYPE], Awaitable[ProblemService]]
@@ -98,9 +99,37 @@ def main() -> None:
         # Build app
         app = build_application(settings, session_factory)
 
-        # Initialize and start
+        # Initialize and start bot
         await app.initialize()
         await app.start()
+
+        # --- Proactive scheduler ---
+        ai_service = OpenAIAnalysisService(
+            api_key=settings.openai_api_key,
+            model=settings.openai_model,
+            base_url=settings.ai_base_url,
+        )
+
+        async def _send_nudge(telegram_id: int, text: str) -> None:
+            """Send a proactive nudge to a user via the bot."""
+            try:
+                await app.bot.send_message(chat_id=telegram_id, text=text)
+            except Exception as e:
+                logger.warning(f"Failed to send nudge to {telegram_id}: {e}")
+
+        _sched_session = session_factory()
+        scheduler = ProactiveScheduler(
+            user_repo=SqlAlchemyUserRepository(_sched_session),
+            problem_repo=SqlAlchemyProblemRepository(_sched_session),
+            context_repo=SqlAlchemyConversationContextRepository(_sched_session),
+            ai_service=ai_service,
+            notification_sender=_send_nudge,
+            check_interval_minutes=settings.proactive_check_interval_minutes,
+        )
+        scheduler.start()
+        logger.info("Proactive scheduler started")
+        # ---
+
         await app.updater.start_polling()
         logger.info("Bot is polling... Press Ctrl+C to stop")
 
@@ -111,6 +140,7 @@ def main() -> None:
         except asyncio.CancelledError:
             pass
         finally:
+            scheduler.stop()
             await app.updater.stop()
             await app.stop()
             await app.shutdown()
