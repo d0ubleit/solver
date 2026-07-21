@@ -82,3 +82,27 @@ class ConversationContextRepository(ABC):
     async def update(self, context: ConversationContext) -> ConversationContext:
         """Update an existing conversation context."""
         ...
+
+
+class PromptTemplateRepository(ABC):
+    """Repository interface for PromptTemplate."""
+
+    @abstractmethod
+    async def add(self, template) -> "PromptTemplate":
+        """Add a new prompt template."""
+        ...
+
+    @abstractmethod
+    async def get_by_category(self, category: str) -> "PromptTemplate | None":
+        """Retrieve a prompt template by category."""
+        ...
+
+    @abstractmethod
+    async def get_active(self) -> list:
+        """Retrieve all active prompt templates."""
+        ...
+
+    @abstractmethod
+    async def update(self, template) -> "PromptTemplate":
+        """Update an existing prompt template."""
+        ...

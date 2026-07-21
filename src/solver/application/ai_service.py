@@ -96,14 +96,15 @@ class OpenAIAnalysisService(AIAnalysisService):
             )
         return self._client
 
-    async def analyze(self, request: AIAnalysisRequestDTO) -> AIAnalysisResponseDTO:
-        """Analyze a problem using OpenAI API."""
+    async def analyze(self, request: AIAnalysisRequestDTO, system_prompt: str = "") -> AIAnalysisResponseDTO:
+        """Analyze a problem using OpenAI API. Accepts optional system_prompt override."""
         import json
 
         client = self._get_client()
+        prompt = system_prompt or self.SYSTEM_PROMPT
 
         messages = [
-            {"role": "system", "content": self.SYSTEM_PROMPT},
+            {"role": "system", "content": prompt},
             {
                 "role": "user",
                 "content": f"Проблема: {request.problem_title}\n\nОписание: {request.problem_description}",

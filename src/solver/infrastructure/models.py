@@ -133,3 +133,18 @@ class ProactiveTriggerModel(Base):
     fired_at = Column(DateTime, nullable=True)
     status = Column(String(50), default="pending")
     created_at = Column(DateTime, default=_utcnow)
+
+
+class PromptTemplateModel(Base):
+    """SQLAlchemy model for prompt templates."""
+
+    __tablename__ = "prompt_templates"
+
+    id = Column(String(36), primary_key=True, default=_new_uuid)
+    category = Column(String(100), unique=True, nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    system_prompt = Column(Text, nullable=False)
+    usage_count = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=_utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)

@@ -83,11 +83,13 @@ class ProblemService:
         user_repo: UserRepository,
         context_repo: ConversationContextRepository,
         ai_service: AIAnalysisService,
+        prompt_service: "PromptService | None" = None,
     ) -> None:
         self._problem_repo = problem_repo
         self._user_repo = user_repo
         self._context_repo = context_repo
         self._ai_service = ai_service
+        self._prompt_service = prompt_service
 
     async def create_problem(
         self, telegram_id: int, dto: CreateProblemDTO
@@ -131,14 +133,24 @@ class ProblemService:
         # Get conversation context
         ctx = await self._context_repo.get_by_problem_id(problem.id)
 
-        # Call AI
+        # Call AI with adapted prompt
         try:
+            # Get best prompt for this problem
+            adapted_prompt = ""
+            if self._prompt_service:
+                adapted_prompt = await self._prompt_service.get_prompt_for_problem(
+                    problem_title=problem.title,
+                    problem_description=problem.description,
+                    base_prompt="",  # Will use AI service's default
+                )
+
             result = await self._ai_service.analyze(
                 AIAnalysisRequestDTO(
                     problem_title=problem.title,
                     problem_description=problem.description,
                     conversation_history=ctx.messages if ctx else [],
-                )
+                ),
+                system_prompt=adapted_prompt,
             )
         except Exception as e:
             raise AIAnalysisError(problem_id=str(problem.id), reason=str(e))

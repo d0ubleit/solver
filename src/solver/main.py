@@ -11,11 +11,13 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 from solver.config import get_settings
 from solver.application.ai_service import OpenAIAnalysisService
 from solver.application.services import ProblemService
+from solver.application.prompt_service import PromptService
 from solver.infrastructure.database import create_engine, create_session_factory, Base
 from solver.infrastructure.repositories import (
     SqlAlchemyUserRepository,
     SqlAlchemyProblemRepository,
     SqlAlchemyConversationContextRepository,
+    SqlAlchemyPromptTemplateRepository,
 )
 from solver.presentation.handlers import BotHandlers
 from solver.infrastructure.scheduler import ProactiveScheduler
@@ -54,7 +56,11 @@ def build_application(settings, session_factory) -> Application:
             user_repo=SqlAlchemyUserRepository(session),
             context_repo=SqlAlchemyConversationContextRepository(session),
             ai_service=ai_service,
+            prompt_service=prompt_service_factory(session),
         )
+
+    def prompt_service_factory(session: AsyncSession) -> PromptService:
+        return PromptService(SqlAlchemyPromptTemplateRepository(session))
 
     app = Application.builder().token(settings.telegram_bot_token).build()
 
@@ -98,6 +104,13 @@ def main() -> None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables created")
+
+        # Seed prompt templates
+        seed_session = session_factory()
+        async with seed_session as s:
+            ps = PromptService(SqlAlchemyPromptTemplateRepository(s))
+            await ps.seed_if_empty()
+        logger.info("Prompt templates seeded")
 
         # Build app
         app = build_application(settings, session_factory)

@@ -335,3 +335,92 @@ class SqlAlchemyConversationContextRepository(ConversationContextRepository):
         model.updated_at = datetime.now(tz.utc)
         await self._session.commit()
         return context
+
+
+class SqlAlchemyPromptTemplateRepository:
+    """SQLAlchemy implementation of PromptTemplateRepository."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, template):
+        from solver.infrastructure.models import PromptTemplateModel
+
+        model = PromptTemplateModel(
+            id=str(template.id),
+            category=template.category,
+            title=template.title,
+            system_prompt=template.system_prompt,
+            usage_count=template.usage_count,
+            is_active=template.is_active,
+            created_at=template.created_at,
+            updated_at=template._updated_at,
+        )
+        self._session.add(model)
+        await self._session.commit()
+        return template
+
+    async def get_by_category(self, category: str):
+        from solver.infrastructure.models import PromptTemplateModel
+        from solver.domain.prompts import PromptTemplate, PromptTemplateId
+        from uuid import UUID
+
+        result = await self._session.execute(
+            select(PromptTemplateModel).where(
+                PromptTemplateModel.category == category,
+                PromptTemplateModel.is_active == True,
+            )
+        )
+        model = result.scalar_one_or_none()
+        if model is None:
+            return None
+        return PromptTemplate(
+            id=PromptTemplateId(UUID(model.id)),
+            category=model.category,
+            title=model.title,
+            system_prompt=model.system_prompt,
+            usage_count=model.usage_count or 0,
+            is_active=model.is_active,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        )
+
+    async def get_active(self) -> list:
+        from solver.infrastructure.models import PromptTemplateModel
+        from solver.domain.prompts import PromptTemplate, PromptTemplateId
+        from uuid import UUID
+
+        result = await self._session.execute(
+            select(PromptTemplateModel).where(PromptTemplateModel.is_active == True)
+        )
+        models = result.scalars().all()
+        return [
+            PromptTemplate(
+                id=PromptTemplateId(UUID(m.id)),
+                category=m.category,
+                title=m.title,
+                system_prompt=m.system_prompt,
+                usage_count=m.usage_count or 0,
+                is_active=m.is_active,
+                created_at=m.created_at,
+                updated_at=m.updated_at,
+            )
+            for m in models
+        ]
+
+    async def update(self, template):
+        from solver.infrastructure.models import PromptTemplateModel
+
+        result = await self._session.execute(
+            select(PromptTemplateModel).where(PromptTemplateModel.id == str(template.id))
+        )
+        model = result.scalar_one_or_none()
+        if model is None:
+            return await self.add(template)
+
+        model.usage_count = template.usage_count
+        model.is_active = template.is_active
+        model.system_prompt = template.system_prompt
+        model.updated_at = datetime.now(tz.utc)
+        await self._session.commit()
+        return template
