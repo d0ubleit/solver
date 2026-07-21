@@ -161,6 +161,112 @@ class BotHandlers:
         )
         await update.message.reply_text(summary)
 
+    # ------------------------------------------------------------------
+    # /run_test command — scriptable self-testing
+    # ------------------------------------------------------------------
+    async def run_test_cmd(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Run a test script. Format: /run_test /new|Заголовок|/skip|/list|/view 1|/done 1 1"""
+        text = update.message.text or ""
+        parts = text.split(" ", 1)
+        if len(parts) < 2:
+            await update.message.reply_text(
+                "Формат: /run_test /new\\|Заголовок\\|/skip\\|/list\\|/view 1\\|/done 1 1"
+            )
+            return
+
+        script = parts[1]
+        steps = [s.strip() for s in script.split("|") if s.strip()]
+        user_id = update.effective_user.id
+
+        report: list[str] = ["🧪 Запуск тестового сценария:\n"]
+        passed = 0
+        failed = 0
+        convo_state = None  # TITLE or DESCRIPTION during /new flow
+
+        for i, step in enumerate(steps, 1):
+            report.append(f"*Шаг {i}*: `{step[:80]}`")
+
+            try:
+                bot = _TestFakeBot()
+                fake_update = self._build_fake_update(step, user_id, bot)
+                fake_ctx = _TestFakeContext(bot, fake_update, context)
+
+                if step.startswith("/"):
+                    cmd = step.split()[0].lower()
+                    if cmd == "/new":
+                        await self.new_problem_start(fake_update, fake_ctx)
+                        convo_state = TITLE
+                    elif cmd == "/skip" and convo_state is not None:
+                        await self.new_problem_skip_description(fake_update, fake_ctx)
+                        convo_state = None
+                    elif cmd == "/cancel" and convo_state is not None:
+                        await self.cancel(fake_update, fake_ctx)
+                        convo_state = None
+                    elif cmd == "/list":
+                        await self.list_problems(fake_update, fake_ctx)
+                    elif cmd == "/view":
+                        await self.view_problem(fake_update, fake_ctx)
+                    elif cmd == "/done":
+                        await self.done_step(fake_update, fake_ctx)
+                    elif cmd == "/help":
+                        await self.help_cmd(fake_update, fake_ctx)
+                    elif cmd in ("/test", "/run_test"):
+                        report.append("  ⏭️ Пропущено (нельзя тестировать себя)")
+                        continue
+                    else:
+                        report.append(f"  ⚠️ Неизвестная команда")
+                        failed += 1
+                        continue
+                else:
+                    if convo_state == TITLE:
+                        await self.new_problem_title(fake_update, fake_ctx)
+                        convo_state = DESCRIPTION
+                    elif convo_state == DESCRIPTION:
+                        await self._finish_problem_creation(fake_update, fake_ctx)
+                        convo_state = None
+                    else:
+                        report.append("  ⚠️ Текст вне /new (начни с /new)")
+                        failed += 1
+                        continue
+
+                msgs = bot.sent_messages
+                if msgs:
+                    last = msgs[-1]["text"]
+                    is_error = "ошиб" in last.lower() or "parse" in last.lower()
+                    if is_error:
+                        report.append(f"  ❌ Ошибка: `{last[:120]}`")
+                        failed += 1
+                    else:
+                        report.append(f"  ✅ `{last[:120]}`")
+                        passed += 1
+                else:
+                    report.append("  ✅ Выполнено")
+                    passed += 1
+
+            except Exception as e:
+                report.append(f"  ❌ Исключение: `{e}`")
+                failed += 1
+                convo_state = None
+
+        total = passed + failed
+        report.append(f"\n📊 Итог: {passed}/{total}")
+        report.append("🎉 Все шаги успешны!" if failed == 0 else "⚠️ Есть ошибки.")
+        await update.message.reply_text("\n".join(report))
+
+    @staticmethod
+    def _build_fake_update(text: str, user_id: int, bot):
+        """Build a fake Telegram Update for internal testing."""
+        from datetime import datetime
+        from telegram import Update, User as TgUser, Message, Chat
+
+        tg_user = TgUser(id=user_id, is_bot=False, first_name="TestRunner")
+        chat = Chat(id=user_id, type="private")
+        message = Message(message_id=1, date=datetime.now(), chat=chat, from_user=tg_user, text=text)
+        for obj in (message, chat, tg_user):
+            obj.set_bot(bot)
+        update = Update(update_id=1, message=message)
+        update.set_bot(bot)
+        return update
 
     # ------------------------------------------------------------------
     # /new conversation flow
@@ -455,3 +561,40 @@ class BotHandlers:
             },
             fallbacks=[CommandHandler("cancel", self.cancel)],
         )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Internal helpers for /run_test self-testing
+# ═══════════════════════════════════════════════════════════════════
+
+class _TestFakeBot:
+    """Fake bot that collects sent messages instead of calling Telegram API."""
+    def __init__(self) -> None:
+        self.sent_messages: list[dict] = []
+        self.defaults = None
+
+    async def send_message(self, chat_id: int, text: str, parse_mode=None, **kw):
+        self.sent_messages.append({"chat_id": chat_id, "text": text, "parse_mode": parse_mode})
+        from telegram import Message, Chat
+        from datetime import datetime
+        fake = Message(message_id=len(self.sent_messages), date=datetime.now(),
+                       chat=Chat(id=chat_id, type="private"), text=text)
+        fake.set_bot(self)
+        return fake
+
+
+class _TestFakeContext:
+    """Fake context for /run_test that delegates service calls to the real one."""
+    def __init__(self, bot: _TestFakeBot, update, real_context) -> None:
+        self.bot = bot
+        self._update = update
+        self.user_data: dict = {}
+        self.application = real_context.application
+
+    @property
+    def effective_user(self):
+        return self._update.effective_user
+
+    @property
+    def effective_chat(self):
+        return self._update.effective_chat
