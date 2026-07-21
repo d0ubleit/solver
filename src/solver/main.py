@@ -75,8 +75,8 @@ def build_application(settings, session_factory) -> Application:
     app.add_handler(CommandHandler("done", handlers.done_step))
     app.add_handler(CommandHandler("session", handlers.session_cmd))
     app.add_handler(CommandHandler("leave", handlers.leave_cmd))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_session_message))
     app.add_handler(handlers.build_new_problem_handler())
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_session_message))
 
     logger.info("Bot handlers registered")
     return app
