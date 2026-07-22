@@ -184,7 +184,7 @@ class TestNewProblemFlow:
         u3, _ = _make_update("Коллега перебивает на совещаниях", user_id=222, bot=bot)
         ctx._update = u3
         await handlers._finish_problem_creation(u3, ctx)
-        final = bot.sent_messages[-1]["text"]
+        final = bot.sent_messages[-2]["text"]  # problem details (last is session hint)
         assert "Шаг 1" in final
         assert "Шаг 2" in final
         assert "Шаг 3" in final

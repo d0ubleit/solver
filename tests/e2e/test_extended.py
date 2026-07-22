@@ -127,7 +127,7 @@ class TestRealisticAIOutput:
         """AI returns '1. Do X' — dots must be escaped."""
         bot = await _create_problem(handlers, user_id=100, title="Конфликт на работе")
 
-        final = bot.sent_messages[-1]["text"]
+        final = bot.sent_messages[-2]["text"]  # problem details (last is session hint)
         # Should contain steps with dots
         assert "1." in final or "1\\." in final
         # Should NOT contain raw Markdown error messages
@@ -139,7 +139,7 @@ class TestRealisticAIOutput:
         """AI uses *bold* in suggestions — asterisks must be escaped."""
         bot = await _create_problem(handlers, user_id=101, title="Сложная ситуация")
 
-        final = bot.sent_messages[-1]["text"]
+        final = bot.sent_messages[-2]["text"]  # problem details (last is session hint)
         # Check that asterisks from AI suggestions are escaped
         assert "\\*" in final or "*ненасильственного*" not in final
         assert "parse" not in final.lower()
@@ -149,7 +149,7 @@ class TestRealisticAIOutput:
         """AI uses _italic_ in suggestions — underscores must be escaped."""
         bot = await _create_problem(handlers, user_id=102, title="Проблема с коммуникацией")
 
-        final = bot.sent_messages[-1]["text"]
+        final = bot.sent_messages[-2]["text"]  # problem details (last is session hint)
         assert "parse" not in final.lower()
         assert "entities" not in final.lower()
 
@@ -168,7 +168,7 @@ class TestRealisticAIOutput:
             ),
         )
 
-        final = bot.sent_messages[-1]["text"]
+        final = bot.sent_messages[-2]["text"]  # problem details (last is session hint)
         assert "parse" not in final.lower()
         assert "Выгорание" in final or "выгорание" in final.lower()
 
@@ -181,7 +181,7 @@ class TestRealisticAIOutput:
             title="Проблема с деньгами: зарплата vs расходы (нужно срочно!)",
         )
 
-        final = bot.sent_messages[-1]["text"]
+        final = bot.sent_messages[-2]["text"]  # problem details (last is session hint)
         assert "parse" not in final.lower()
         assert "зарплата" in final
 
@@ -460,7 +460,7 @@ class TestSessionMode:
         # Should be in session now
         assert 800 in session_handlers._active_sessions
         # Last message should mention session
-        final = bot.sent_messages[-1]["text"]
+        final = bot.sent_messages[-2]["text"]  # problem details (last is session hint)
         assert "сессии" in final.lower() or "session" in final.lower()
 
     @pytest.mark.asyncio

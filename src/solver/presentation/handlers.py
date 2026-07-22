@@ -340,10 +340,14 @@ class BotHandlers:
             # Auto-enter session mode for this problem
             self._active_sessions[telegram_id] = problem.id
 
-            # Format response
+            # Format and send problem details (MarkdownV2 — validated by tests)
             response = self._format_problem(problem)
-            response += "\n\n💬 Ты в сессии этой проблемы. Пиши — я помогу уточнить или скорректировать шаги."
             await update.message.reply_text(response, parse_mode="MarkdownV2")
+
+            # Session hint as separate plain-text message (no Markdown issues)
+            await update.message.reply_text(
+                "💬 Ты в сессии этой проблемы. Пиши — я помогу уточнить или скорректировать шаги."
+            )
 
         except Exception as e:
             await update.message.reply_text(
