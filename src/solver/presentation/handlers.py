@@ -342,7 +342,7 @@ class BotHandlers:
 
             # Format response
             response = self._format_problem(problem)
-            response += "\n\n💬 _Ты в сессии этой проблемы. Пиши — я помогу уточнить или скорректировать шаги._"
+            response += "\n\n💬 Ты в сессии этой проблемы. Пиши — я помогу уточнить или скорректировать шаги."
             await update.message.reply_text(response, parse_mode="MarkdownV2")
 
         except Exception as e:
