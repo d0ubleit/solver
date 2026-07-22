@@ -124,7 +124,17 @@ class OpenAIAnalysisService(AIAnalysisService):
         )
 
         content = response.choices[0].message.content or "{}"
-        result = json.loads(content)
+
+        # Robust JSON parsing
+        try:
+            result = json.loads(content)
+        except json.JSONDecodeError:
+            try:
+                start = content.index("{")
+                end = content.rindex("}") + 1
+                result = json.loads(content[start:end])
+            except (ValueError, json.JSONDecodeError):
+                result = {"analysis": content.strip(), "steps": []}
 
         return AIAnalysisResponseDTO(
             analysis=result.get("analysis", ""),
@@ -202,4 +212,20 @@ class OpenAIAnalysisService(AIAnalysisService):
         )
 
         content = response.choices[0].message.content or "{}"
-        return json.loads(content)
+
+        # Robust JSON parsing — DeepSeek occasionally returns malformed JSON
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            pass
+
+        # Retry: extract text between first { and last }
+        try:
+            start = content.index("{")
+            end = content.rindex("}") + 1
+            return json.loads(content[start:end])
+        except (ValueError, json.JSONDecodeError):
+            pass
+
+        # Fallback: return raw text as reply
+        return {"reply": content.strip() or "Понял, продолжаем.", "updated_steps": None}
