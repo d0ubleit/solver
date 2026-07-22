@@ -42,6 +42,31 @@ cp .env.example .env
 python -m solver.main
 ```
 
+### Запуск через Docker (рекомендуется)
+
+```bash
+# Первый запуск или после изменений в коде:
+docker compose down && docker compose build --no-cache && docker compose up -d
+
+# Быстрый перезапуск (без изменений в коде):
+docker compose restart
+
+# Остановка:
+docker compose down
+
+# Просмотр логов:
+docker compose logs --tail=50
+
+# Очистить БД (при изменении схемы):
+docker compose down && docker volume rm solver_solver-data && docker compose up -d
+```
+
+### Запуск локально (для разработки)
+
+```bash
+python -m solver.main
+```
+
 ### Запуск тестов
 
 ```bash
