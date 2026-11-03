@@ -1,6 +1,6 @@
 # Solver — Proactive AI Problem-Solver Bot
 
-[![CI](https://github.com/USERNAME/solver/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/solver/actions/workflows/ci.yml)
+[![CI](https://github.com/d0ubleit/solver/actions/workflows/ci.yml/badge.svg)](https://github.com/d0ubleit/solver/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)]()
 [![Tests](https://img.shields.io/badge/tests-139%20passed-brightgreen)]()
 [![Coverage](https://img.shields.io/badge/coverage-70%25-yellowgreen)]()
