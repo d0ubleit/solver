@@ -1,15 +1,16 @@
 """Unit tests for the proactive notification scheduler."""
 
-import pytest
 from unittest.mock import AsyncMock
 
-from solver.infrastructure.scheduler import ProactiveScheduler
-from solver.domain.repositories import (
-    UserRepository,
-    ProblemRepository,
-    ConversationContextRepository,
-)
+import pytest
+
 from solver.application.ai_service import AIAnalysisService
+from solver.domain.repositories import (
+    ConversationContextRepository,
+    ProblemRepository,
+    UserRepository,
+)
+from solver.infrastructure.scheduler import ProactiveScheduler
 
 
 @pytest.fixture

@@ -1,26 +1,27 @@
 """Unit tests for domain entities: Problem, SolutionStep, User, ConversationContext."""
 
-import pytest
 from datetime import datetime
 
-from solver.domain.value_objects import (
-    ProblemStatus,
-    StepStatus,
-    Priority,
-    ProactiveLevel,
-    ProblemId,
-    StepId,
-    UserId,
-)
+import pytest
+
 from solver.domain.entities import (
+    ConversationContext,
     Problem,
     SolutionStep,
     User,
-    ConversationContext,
 )
 from solver.domain.exceptions import (
     ProblemAlreadyResolvedError,
     StepNotPendingError,
+)
+from solver.domain.value_objects import (
+    Priority,
+    ProactiveLevel,
+    ProblemId,
+    ProblemStatus,
+    StepId,
+    StepStatus,
+    UserId,
 )
 
 

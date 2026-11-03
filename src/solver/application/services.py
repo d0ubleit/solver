@@ -9,19 +9,19 @@ from solver.application.dtos import (
     CreateProblemDTO,
     ProblemResponseDTO,
     StepResponseDTO,
-    UserResponseDTO,
     UpdateStepDTO,
+    UserResponseDTO,
 )
 from solver.domain.entities import Problem, User
 from solver.domain.exceptions import (
+    AIAnalysisError,
     ProblemNotFoundError,
     UserNotFoundError,
-    AIAnalysisError,
 )
 from solver.domain.repositories import (
+    ConversationContextRepository,
     ProblemRepository,
     UserRepository,
-    ConversationContextRepository,
 )
 from solver.domain.value_objects import (
     ProblemId,

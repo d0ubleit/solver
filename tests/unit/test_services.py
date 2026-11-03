@@ -1,26 +1,27 @@
 """Unit tests for application services with mocked dependencies."""
 
-import pytest
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
-from solver.application.services import ProblemService
+import pytest
+
+from solver.application.ai_service import AIAnalysisService
 from solver.application.dtos import (
-    CreateProblemDTO,
     AIAnalysisResponseDTO,
+    CreateProblemDTO,
     UpdateStepDTO,
 )
-from solver.domain.entities import User, Problem
+from solver.application.services import ProblemService
+from solver.domain.entities import Problem, User
+from solver.domain.exceptions import ProblemNotFoundError
+from solver.domain.repositories import (
+    ConversationContextRepository,
+    ProblemRepository,
+    UserRepository,
+)
 from solver.domain.value_objects import (
     ProblemStatus,
 )
-from solver.domain.exceptions import ProblemNotFoundError
-from solver.domain.repositories import (
-    UserRepository,
-    ProblemRepository,
-    ConversationContextRepository,
-)
-from solver.application.ai_service import AIAnalysisService
 
 
 @pytest.fixture

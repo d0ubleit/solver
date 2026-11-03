@@ -2,26 +2,25 @@
 
 import asyncio
 import sys
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
-from solver.config import get_settings
 from solver.application.ai_service import OpenAIAnalysisService
-from solver.application.services import ProblemService
 from solver.application.prompt_service import PromptService
-from solver.infrastructure.database import create_engine, create_session_factory, Base
+from solver.application.services import ProblemService
+from solver.config import get_settings
+from solver.infrastructure.database import Base, create_engine, create_session_factory
 from solver.infrastructure.repositories import (
-    SqlAlchemyUserRepository,
-    SqlAlchemyProblemRepository,
     SqlAlchemyConversationContextRepository,
+    SqlAlchemyProblemRepository,
     SqlAlchemyPromptTemplateRepository,
+    SqlAlchemyUserRepository,
 )
-from solver.presentation.handlers import BotHandlers
 from solver.infrastructure.scheduler import ProactiveScheduler
-
+from solver.presentation.handlers import BotHandlers
 
 ServiceFactory = Callable[[ContextTypes.DEFAULT_TYPE], Awaitable[ProblemService]]
 

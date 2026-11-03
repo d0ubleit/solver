@@ -10,19 +10,19 @@ from unittest.mock import AsyncMock
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from telegram import Update, User as TgUser, Message, Chat
+from telegram import Chat, Message, Update
+from telegram import User as TgUser
 
 from solver.application.ai_service import AIAnalysisService
 from solver.application.dtos import AIAnalysisResponseDTO
 from solver.application.services import ProblemService
 from solver.infrastructure.database import Base
 from solver.infrastructure.repositories import (
-    SqlAlchemyUserRepository,
-    SqlAlchemyProblemRepository,
     SqlAlchemyConversationContextRepository,
+    SqlAlchemyProblemRepository,
+    SqlAlchemyUserRepository,
 )
 from solver.presentation.handlers import BotHandlers
-
 
 # ═══════════════════════════════════════════════════════════════════
 # Fake Telegram objects

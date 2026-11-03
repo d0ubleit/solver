@@ -1,18 +1,19 @@
 """SQLAlchemy ORM models for the Solver application."""
 
 import uuid
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 
 from sqlalchemy import (
+    JSON,
+    BigInteger,
     Boolean,
     Column,
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     String,
     Text,
-    BigInteger,
 )
 from sqlalchemy.orm import relationship
 

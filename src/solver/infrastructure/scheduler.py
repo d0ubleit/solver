@@ -1,14 +1,19 @@
 """Proactive notification scheduler using APScheduler."""
 
-from datetime import datetime, timezone as tz, timedelta
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from datetime import datetime, timedelta
+from datetime import timezone as tz
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from loguru import logger
 
-from solver.domain.repositories import UserRepository, ProblemRepository, ConversationContextRepository
 from solver.application.ai_service import AIAnalysisService
+from solver.domain.repositories import (
+    ConversationContextRepository,
+    ProblemRepository,
+    UserRepository,
+)
 
 
 class ProactiveScheduler:

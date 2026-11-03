@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from solver.application.prompt_service import PromptService, SEED_PROMPTS
+from solver.application.prompt_service import SEED_PROMPTS, PromptService
 from solver.domain.prompts import PromptTemplate
 
 

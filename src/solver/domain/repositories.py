@@ -1,9 +1,10 @@
 """Repository interfaces (ports) for the domain layer."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
-from solver.domain.entities import Problem, User, ConversationContext
+from solver.domain.entities import ConversationContext, Problem, User
 from solver.domain.value_objects import ProblemId, UserId
 
 if TYPE_CHECKING:

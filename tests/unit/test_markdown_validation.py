@@ -5,9 +5,8 @@ BEFORE they reach Telegram.
 """
 
 
-from solver.presentation.markdown_validator import assert_valid_markdown_v2
 from solver.presentation.handlers import BotHandlers
-
+from solver.presentation.markdown_validator import assert_valid_markdown_v2
 
 # ═══════════════════════════════════════════════════════════════════
 # Test data: realistic bot outputs from all code paths

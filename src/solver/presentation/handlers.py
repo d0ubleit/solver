@@ -1,13 +1,13 @@
 """Telegram bot command and conversation handlers."""
 
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 from uuid import UUID
 
 from telegram import Update
 from telegram.ext import (
+    CommandHandler,
     ContextTypes,
     ConversationHandler,
-    CommandHandler,
     MessageHandler,
     filters,
 )
@@ -259,7 +259,9 @@ class BotHandlers:
     def _build_fake_update(text: str, user_id: int, bot):
         """Build a fake Telegram Update for internal testing."""
         from datetime import datetime
-        from telegram import Update, User as TgUser, Message, Chat
+
+        from telegram import Chat, Message, Update
+        from telegram import User as TgUser
 
         tg_user = TgUser(id=user_id, is_bot=False, first_name="TestRunner")
         chat = Chat(id=user_id, type="private")
@@ -673,8 +675,9 @@ class _TestFakeBot:
 
     async def send_message(self, chat_id: int, text: str, parse_mode=None, **kw):
         self.sent_messages.append({"chat_id": chat_id, "text": text, "parse_mode": parse_mode})
-        from telegram import Message, Chat
         from datetime import datetime
+
+        from telegram import Chat, Message
         fake = Message(message_id=len(self.sent_messages), date=datetime.now(),
                        chat=Chat(id=chat_id, type="private"), text=text)
         fake.set_bot(self)

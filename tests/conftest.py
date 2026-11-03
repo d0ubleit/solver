@@ -1,7 +1,8 @@
 """Test fixtures and configuration for the entire test suite."""
 
-import pytest
 from uuid import UUID, uuid4
+
+import pytest
 
 
 @pytest.fixture

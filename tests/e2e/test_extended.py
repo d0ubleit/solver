@@ -18,14 +18,14 @@ from solver.application.dtos import AIAnalysisResponseDTO
 from solver.application.services import ProblemService
 from solver.infrastructure.database import Base
 from solver.infrastructure.repositories import (
-    SqlAlchemyUserRepository,
-    SqlAlchemyProblemRepository,
     SqlAlchemyConversationContextRepository,
+    SqlAlchemyProblemRepository,
+    SqlAlchemyUserRepository,
 )
 from solver.presentation.handlers import BotHandlers
 
 # Reuse the FakeBot/fake Update infrastructure from the main E2E tests
-from tests.e2e.test_bot import _FakeBot, _make_update, _FakeContext
+from tests.e2e.test_bot import _FakeBot, _FakeContext, _make_update
 
 # ═══════════════════════════════════════════════════════════════════
 # Realistic AI mock — simulates actual DeepSeek output
@@ -364,7 +364,7 @@ class TestProgressTracking:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# Tests: view command with realistic data  
+# Tests: view command with realistic data
 # ═══════════════════════════════════════════════════════════════════
 
 class TestViewWithRealisticData:

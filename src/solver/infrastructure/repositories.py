@@ -1,38 +1,39 @@
 """SQLAlchemy repository implementations for domain repository interfaces."""
 
-from datetime import datetime, timezone as tz
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import datetime
+from datetime import timezone as tz
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from solver.domain.entities import (
+    ConversationContext,
     Problem,
     SolutionStep,
     User,
-    ConversationContext,
-)
-from solver.domain.repositories import (
-    UserRepository,
-    ProblemRepository,
-    ConversationContextRepository,
-)
-from solver.domain.value_objects import (
-    ProblemId,
-    StepId,
-    UserId,
-    ProblemStatus,
-    StepStatus,
-    Priority,
-    ProactiveLevel,
 )
 from solver.domain.exceptions import ProblemNotFoundError, UserNotFoundError
+from solver.domain.repositories import (
+    ConversationContextRepository,
+    ProblemRepository,
+    UserRepository,
+)
+from solver.domain.value_objects import (
+    Priority,
+    ProactiveLevel,
+    ProblemId,
+    ProblemStatus,
+    StepId,
+    StepStatus,
+    UserId,
+)
 from solver.infrastructure.models import (
-    UserModel,
+    ConversationContextModel,
     ProblemModel,
     StepModel,
-    ConversationContextModel,
+    UserModel,
 )
 
 
@@ -361,9 +362,10 @@ class SqlAlchemyPromptTemplateRepository:
         return template
 
     async def get_by_category(self, category: str):
-        from solver.infrastructure.models import PromptTemplateModel
-        from solver.domain.prompts import PromptTemplate, PromptTemplateId
         from uuid import UUID
+
+        from solver.domain.prompts import PromptTemplate, PromptTemplateId
+        from solver.infrastructure.models import PromptTemplateModel
 
         result = await self._session.execute(
             select(PromptTemplateModel).where(
@@ -386,9 +388,10 @@ class SqlAlchemyPromptTemplateRepository:
         )
 
     async def get_active(self) -> list:
-        from solver.infrastructure.models import PromptTemplateModel
-        from solver.domain.prompts import PromptTemplate, PromptTemplateId
         from uuid import UUID
+
+        from solver.domain.prompts import PromptTemplate, PromptTemplateId
+        from solver.infrastructure.models import PromptTemplateModel
 
         result = await self._session.execute(
             select(PromptTemplateModel).where(PromptTemplateModel.is_active.is_(True))

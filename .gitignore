@@ -34,3 +34,5 @@ coverage.xml
 
 # MyPy
 .mypy_cache/
+
+.debug

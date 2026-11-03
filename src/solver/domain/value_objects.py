@@ -1,10 +1,10 @@
 """Domain value objects: enums and typed identifiers."""
 
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 
-class ProblemStatus(str, Enum):
+class ProblemStatus(StrEnum):
     """Status of a problem in its lifecycle."""
 
     DRAFT = "draft"
@@ -14,7 +14,7 @@ class ProblemStatus(str, Enum):
     RESOLVED = "resolved"
 
 
-class StepStatus(str, Enum):
+class StepStatus(StrEnum):
     """Status of a solution step."""
 
     PENDING = "pending"
@@ -23,7 +23,7 @@ class StepStatus(str, Enum):
     SKIPPED = "skipped"
 
 
-class Priority(str, Enum):
+class Priority(StrEnum):
     """Priority level of a problem."""
 
     LOW = "low"
@@ -32,7 +32,7 @@ class Priority(str, Enum):
     CRITICAL = "critical"
 
 
-class ProactiveLevel(str, Enum):
+class ProactiveLevel(StrEnum):
     """Level of proactive engagement for a user."""
 
     GENTLE = "gentle"

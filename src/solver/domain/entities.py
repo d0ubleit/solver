@@ -1,20 +1,21 @@
 """Domain entities: Problem, SolutionStep, User, ConversationContext."""
 
-from datetime import datetime, timezone as tz
+from datetime import datetime
+from datetime import timezone as tz
 from uuid import uuid4
 
-from solver.domain.value_objects import (
-    ProblemStatus,
-    StepStatus,
-    Priority,
-    ProactiveLevel,
-    ProblemId,
-    StepId,
-    UserId,
-)
 from solver.domain.exceptions import (
     ProblemAlreadyResolvedError,
     StepNotPendingError,
+)
+from solver.domain.value_objects import (
+    Priority,
+    ProactiveLevel,
+    ProblemId,
+    ProblemStatus,
+    StepId,
+    StepStatus,
+    UserId,
 )
 
 

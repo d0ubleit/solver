@@ -1,15 +1,16 @@
 """Unit tests for domain value objects: enums, IDs, statuses."""
 
-import pytest
 from uuid import UUID, uuid4
 
+import pytest
+
 from solver.domain.value_objects import (
-    ProblemStatus,
-    StepStatus,
     Priority,
     ProactiveLevel,
     ProblemId,
+    ProblemStatus,
     StepId,
+    StepStatus,
     UserId,
 )
 
