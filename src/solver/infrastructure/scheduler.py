@@ -1,6 +1,5 @@
 """Proactive notification scheduler using APScheduler."""
 
-import asyncio
 from datetime import datetime, timezone as tz, timedelta
 from typing import Callable, Awaitable
 

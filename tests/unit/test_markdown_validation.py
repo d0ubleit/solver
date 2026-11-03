@@ -4,7 +4,6 @@ This test MUST pass before any commit — it catches Markdown parse errors
 BEFORE they reach Telegram.
 """
 
-import pytest
 
 from solver.presentation.markdown_validator import assert_valid_markdown_v2
 from solver.presentation.handlers import BotHandlers

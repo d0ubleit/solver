@@ -216,7 +216,7 @@ class BotHandlers:
                         report.append("  ⏭️ Пропущено (нельзя тестировать себя)")
                         continue
                     else:
-                        report.append(f"  ⚠️ Неизвестная команда")
+                        report.append("  ⚠️ Неизвестная команда")
                         failed += 1
                         continue
                 else:

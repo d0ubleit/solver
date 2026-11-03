@@ -1,11 +1,11 @@
 """Application services for problem management and AI orchestration."""
 
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from solver.application.ai_service import AIAnalysisService
 from solver.application.dtos import (
     AIAnalysisRequestDTO,
-    AIAnalysisResponseDTO,
     CreateProblemDTO,
     ProblemResponseDTO,
     StepResponseDTO,
@@ -25,10 +25,11 @@ from solver.domain.repositories import (
 )
 from solver.domain.value_objects import (
     ProblemId,
-    UserId,
     StepStatus,
-    ProblemStatus,
 )
+
+if TYPE_CHECKING:
+    from solver.application.prompt_service import PromptService
 
 
 def _problem_to_response(problem: Problem) -> ProblemResponseDTO:

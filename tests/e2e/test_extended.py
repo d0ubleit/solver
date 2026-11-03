@@ -7,7 +7,6 @@ These tests use AI mock responses that closely mimic real DeepSeek output:
 - long descriptions
 """
 
-from datetime import datetime
 from unittest.mock import AsyncMock
 
 import pytest
@@ -197,7 +196,7 @@ class TestMultiStepFlows:
     async def test_create_view_done_all_steps(self, handlers):
         """Create → view → done step 1 → done step 2 → ... → auto-resolve."""
         # Create
-        bot = await _create_problem(handlers, user_id=200, title="Научиться Python")
+        await _create_problem(handlers, user_id=200, title="Научиться Python")
 
         # View
         u, b = _make_update("/view 1", user_id=200)
@@ -319,7 +318,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_done_out_of_range_step(self, handlers):
         """Create problem with 5 steps → /done 1 99 shows error."""
-        bot = await _create_problem(handlers, user_id=505, title="Тест шагов")
+        await _create_problem(handlers, user_id=505, title="Тест шагов")
 
         u, b = _make_update("/done 1 99", user_id=505)
         await handlers.done_step(u, _FakeContext(b, u))
@@ -337,7 +336,7 @@ class TestProgressTracking:
     @pytest.mark.asyncio
     async def test_progress_after_partial_completion(self, handlers):
         """Do 2 of 5 steps → verify progress ~40%."""
-        bot = await _create_problem(handlers, user_id=600, title="Прогресс-тест")
+        await _create_problem(handlers, user_id=600, title="Прогресс-тест")
 
         # Done step 1
         u1, b1 = _make_update("/done 1 1", user_id=600)
@@ -352,7 +351,7 @@ class TestProgressTracking:
     @pytest.mark.asyncio
     async def test_view_shows_updated_progress(self, handlers):
         """Create → done 1 step → /view shows updated counts."""
-        bot = await _create_problem(handlers, user_id=601, title="Прогресс-view")
+        await _create_problem(handlers, user_id=601, title="Прогресс-view")
 
         u1, b1 = _make_update("/done 1 1", user_id=601)
         await handlers.done_step(u1, _FakeContext(b1, u1))

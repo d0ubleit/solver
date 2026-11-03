@@ -1,7 +1,7 @@
 """Unit tests for the proactive notification scheduler."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from solver.infrastructure.scheduler import ProactiveScheduler
 from solver.domain.repositories import (

@@ -14,7 +14,6 @@ from sqlalchemy import (
     Text,
     BigInteger,
 )
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 from sqlalchemy.orm import relationship
 
 from solver.infrastructure.database import Base

@@ -4,28 +4,19 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from solver.infrastructure.database import Base, reset_engine
-from solver.infrastructure.models import (
-    UserModel,
-    ProblemModel,
-    StepModel,
-    ConversationContextModel,
-)
+from solver.infrastructure.database import Base
 from solver.infrastructure.repositories import (
     SqlAlchemyUserRepository,
     SqlAlchemyProblemRepository,
     SqlAlchemyConversationContextRepository,
 )
-from solver.domain.entities import User, Problem, SolutionStep, ConversationContext
+from solver.domain.entities import User, Problem, ConversationContext
 from solver.domain.value_objects import (
     UserId,
-    ProblemId,
     ProblemStatus,
-    StepStatus,
-    Priority,
     ProactiveLevel,
 )
-from solver.domain.exceptions import ProblemNotFoundError, UserNotFoundError
+from solver.domain.exceptions import UserNotFoundError
 
 
 @pytest_asyncio.fixture(scope="function")

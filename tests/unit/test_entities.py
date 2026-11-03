@@ -1,8 +1,7 @@
 """Unit tests for domain entities: Problem, SolutionStep, User, ConversationContext."""
 
 import pytest
-from datetime import datetime, timezone
-from uuid import uuid4
+from datetime import datetime
 
 from solver.domain.value_objects import (
     ProblemStatus,
@@ -22,7 +21,6 @@ from solver.domain.entities import (
 from solver.domain.exceptions import (
     ProblemAlreadyResolvedError,
     StepNotPendingError,
-    InvalidStepStatusTransitionError,
 )
 
 
@@ -199,7 +197,7 @@ class TestProblem:
         problem = Problem(user_id=UserId.generate(), title="Test")
         s1 = problem.add_step("Шаг 1")
         s2 = problem.add_step("Шаг 2")
-        s3 = problem.add_step("Шаг 3")
+        problem.add_step("Шаг 3")
 
         assert problem.completed_steps_count == 0
 

@@ -1,6 +1,5 @@
 """Configuration management for the Solver application."""
 
-from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

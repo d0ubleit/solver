@@ -368,7 +368,7 @@ class SqlAlchemyPromptTemplateRepository:
         result = await self._session.execute(
             select(PromptTemplateModel).where(
                 PromptTemplateModel.category == category,
-                PromptTemplateModel.is_active == True,
+                PromptTemplateModel.is_active.is_(True),
             )
         )
         model = result.scalar_one_or_none()
@@ -391,7 +391,7 @@ class SqlAlchemyPromptTemplateRepository:
         from uuid import UUID
 
         result = await self._session.execute(
-            select(PromptTemplateModel).where(PromptTemplateModel.is_active == True)
+            select(PromptTemplateModel).where(PromptTemplateModel.is_active.is_(True))
         )
         models = result.scalars().all()
         return [
